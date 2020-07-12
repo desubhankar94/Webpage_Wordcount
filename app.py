@@ -28,6 +28,7 @@ from models import *
 def count_and_save_words(url):
 
     errors = []
+    results = {}
 
     try:
         r = requests.get(url)
@@ -35,8 +36,7 @@ def count_and_save_words(url):
         errors.append(
             "Unable to get URL. Please make sure it's valid and try again."
         )
-        return {"error": errors}
-
+        return render_template('index.html', errors=errors)
     # text processing
     raw = BeautifulSoup(r.text).get_text()
     nltk.data.path.append('./nltk_data/')  # set the path
@@ -64,8 +64,7 @@ def count_and_save_words(url):
         return result.id
     except:
         errors.append("Unable to add item to database.")
-        return {"error": errors}
-
+        return render_template('index.html', errors=errors, results=results)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -83,7 +82,7 @@ def index():
         )
         print(job.get_id())
 
-    return render_template('index.html', results=results)
+    #return render_template('index.html', results=results)
 
 
 @app.route("/results/<job_key>", methods=['GET'])

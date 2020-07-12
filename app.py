@@ -3,7 +3,7 @@ import requests
 import operator
 import re
 import nltk
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from stop_words import stops
 from collections import Counter
@@ -69,6 +69,7 @@ def count_and_save_words(url):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = {}
+    job_id = -1
     if request.method == "POST":
         # this import solves a rq bug which currently exists
         from app import count_and_save_words
@@ -81,9 +82,11 @@ def index():
             func=count_and_save_words, args=(url,), result_ttl=5000
         )
         print(job.get_id())
+        job_id = job.get_id()
+        return redirect(url_for('get_results', job_key=job_id))
 
-    #return render_template('index.html', results=results)
-
+    return render_template('index.html', results=results)
+    
 
 @app.route("/results/<job_key>", methods=['GET'])
 def get_results(job_key):

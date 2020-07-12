@@ -102,7 +102,7 @@ def get_results(job_key):
         )[:10]
         return jsonify(results)
     else:
-        return "Nay!", 202
+        return "Nay! Still Processing. Please refresh Again;", 202
 
 
 

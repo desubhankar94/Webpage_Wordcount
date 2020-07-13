@@ -12,36 +12,48 @@ from rq import Queue
 from rq.job import Job
 from worker import conn
 from flask import jsonify
-
-
+import functools
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['CACHE_TYPE'] = 'simple'
 db = SQLAlchemy(app)
 
 q = Queue(connection=conn)
 
 from models import *
 
+@functools.lru_cache(maxsize=None)
+def get_r(url):
+    print(url)
+    try:
+         r = requests.get(url)
+    except:
+        errors.append("Unable to get URL. Please make sure it's valid and try again.")
+
+    return r
+
+@functools.lru_cache(maxsize=None)
+def get_raw(r):
+    return BeautifulSoup(r.text).get_text()
+
 
 def count_and_save_words(url):
 
     errors = []
     results = {}
+             
+    r = get_r(url)
 
-    try:
-        r = requests.get(url)
-    except:
-        errors.append(
-            "Unable to get URL. Please make sure it's valid and try again."
-        )
-        return render_template('index.html', errors=errors)
     # text processing
-    raw = BeautifulSoup(r.text).get_text()
+    #raw = BeautifulSoup(r.text).get_text()
+    raw = get_raw(r)
     nltk.data.path.append('./nltk_data/')  # set the path
     tokens = nltk.word_tokenize(raw)
     text = nltk.Text(tokens)
+
+    print("BeautifulSoup done...")
 
     # remove punctuation, count raw words
     nonPunct = re.compile('.*[A-Za-z].*')
@@ -51,7 +63,9 @@ def count_and_save_words(url):
     # stop words
     no_stop_words = [w for w in raw_words if w.lower() not in stops]
     no_stop_words_count = Counter(no_stop_words)
-
+     
+    print(get_r.cache_info()) 
+    print(get_raw.cache_info()) 
     # save the results
     try:
         result = Result(
@@ -82,6 +96,7 @@ def index():
             func=count_and_save_words, args=(url,), result_ttl=5000
         )
         print(job.get_id())
+        
         job_id = job.get_id()
         return redirect(url_for('get_results', job_key=job_id))
 

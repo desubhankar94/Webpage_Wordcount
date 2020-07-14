@@ -24,7 +24,7 @@ db = SQLAlchemy(app)
 rcache_url = os.getenv('REDIS_URL', 'redis://localhost:6380')
 
 q = Queue(connection=conn)
-rcache = redis.from_url(redis_url, db=1)
+rcache = redis.from_url(rcache_url, db=1)
 #rcache = redis.Redis()
 
 from models import *

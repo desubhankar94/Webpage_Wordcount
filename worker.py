@@ -1,5 +1,5 @@
 import os
-
+import multiprocessing
 import redis
 from rq import Worker, Queue, Connection
 

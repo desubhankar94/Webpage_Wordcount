@@ -21,11 +21,12 @@ app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
-rcache_url = os.getenv('REDIS_URL', 'redis://localhost:6380')
 
-q = Queue(connection=conn)
+rcache_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
 rcache = redis.from_url(rcache_url, db=1)
 #rcache = redis.Redis()
+
+q = Queue(connection=conn)
 
 from models import *
 
@@ -85,6 +86,7 @@ def count_and_save_words(url):
     except:
         errors.append("Unable to add item to database.")
         return render_template('index.html', errors=errors, results=results)
+        
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -134,7 +136,6 @@ def get_results(job_key):
     else:
         #return redirect(url_for('get_results', job_key=job_key))
         return "Nay! Still Processing. Please refresh Again;", 202
-
 
 
 if __name__ == '__main__':

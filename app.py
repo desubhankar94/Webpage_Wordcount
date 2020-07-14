@@ -21,7 +21,7 @@ app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
-rcache_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+rcache_url = os.getenv('REDIS_URL', 'redis://localhost:6380')
 
 q = Queue(connection=conn)
 rcache = redis.from_url(redis_url, db=1)

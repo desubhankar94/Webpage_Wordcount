@@ -12,19 +12,18 @@ from rq import Queue
 from rq.job import Job
 from worker import conn
 from flask import jsonify
-import functools
-from pymemcache.client import base
+import redis
+from datetime import timedelta
+from time import sleep
 
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-#app.config['CACHE_TYPE'] = 'simple'
 db = SQLAlchemy(app)
 
 q = Queue(connection=conn)
-client = base.Client(('localhost', 11211))
-
+rcache = redis.Redis()
 
 from models import *
 
@@ -34,13 +33,13 @@ def count_and_save_words(url):
     results = {}
     raw = ""
     
-    print('cache....???', client.get(url))
+    print('cache....???', rcache.get(url))
     
-    if client.get(url) != None :
+    if rcache.get(url) != None :
         print("url match found in cache")
         print("skipping db entry as already inserted recently...")
-        print(client.get(url))
-        result = client.get(url).decode()
+        print(rcache.get(url))
+        result = rcache.get(url).decode()
         print(result)
         return result
     else :
@@ -76,7 +75,7 @@ def count_and_save_words(url):
         )
         db.session.add(result)
         db.session.commit()
-        client.set(url, result.id, expire=360)
+        rcache.setex(url, 3000, result.id)
         print(url, 'inserted in cache')
         print(result.id)
         print(type(result.id))
@@ -100,11 +99,15 @@ def index():
             url = 'http://' + url
         
         job = q.enqueue_call(
-            func=count_and_save_words, args=(url,), result_ttl=360
+            func=count_and_save_words, args=(url,), result_ttl=3000
         )
         print(job.get_id())
         
         job_id = job.get_id()
+
+        while not job.is_finished :
+            sleep( 1/1000 )
+
         return redirect(url_for('get_results', job_key=job_id))          
         
     return render_template('index.html', results=results)
@@ -123,9 +126,11 @@ def get_results(job_key):
             key=operator.itemgetter(1),
             reverse=True
         )[:10]
-
-        return jsonify(results)
+    
+        return render_template('results.html', results=results)
+        #return jsonify(results)
     else:
+        #return redirect(url_for('get_results', job_key=job_key))
         return "Nay! Still Processing. Please refresh Again;", 202
 
 

@@ -1,2 +1,5 @@
-# learn_flask_1
-Set up a local development environment and then deploy both a staging and a production environment on Heroku.
+A Flask app that calculates word-frequency pairs based on the text from a given URL.
+
+Using:
+postgresql db for backend db
+redis for job queueing and caching results

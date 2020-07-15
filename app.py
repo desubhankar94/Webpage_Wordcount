@@ -16,7 +16,6 @@ import redis
 from datetime import timedelta
 from time import sleep
 
-
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
@@ -145,12 +144,6 @@ def get_results(job_key):
     else:
         #return redirect(url_for('get_results', job_key=job_key))
         return "Nay! Still Processing. Please refresh Again;", 202
-
-
-@app.route("/error")
-def errors(errors):
-    
-    return render_template('error.html', errors=errors)
 
 
 if __name__ == '__main__':

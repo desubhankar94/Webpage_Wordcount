@@ -39,18 +39,21 @@ def count_and_save_words(url):
     print('cache....???', rcache.get(url))
     
     if rcache.get(url) != None :
-        print("url match found in cache")
+        print("url match found in cache :)")
         print("skipping db entry as already inserted recently...")
         print(rcache.get(url))
         result = rcache.get(url).decode()
         print(result)
         return result
     else :
-        print("url match NOT found in cache")
+        print("url match NOT found in cache :(")
         try:
             r = requests.get(url)
         except:
+            print("invalid url ...")
             errors.append("Unable to get URL. Please make sure it's valid and try again.")
+            print(errors)
+            return errors
     
         # text processing
         raw = BeautifulSoup(r.text).get_text() 
@@ -85,12 +88,13 @@ def count_and_save_words(url):
         return result.id     
     except:
         errors.append("Unable to add item to database.")
-        return render_template('index.html', errors=errors, results=results)
-        
+        return errors
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     results = {}
+    errors = []
     job_id = -1 
     
     if request.method == "POST":
@@ -111,10 +115,15 @@ def index():
 
         while not job.is_finished :
             sleep( 1/1000 )
+            
+        print("enqueue job result is :",  job.result)
+        if type(job.result) is list:
+            errors = job.result
+            return render_template('index.html', errors=errors)
 
         return redirect(url_for('get_results', job_key=job_id))          
         
-    return render_template('index.html', results=results)
+    return render_template('index.html', errors=errors, results=results)
     
 
 @app.route("/results/<job_key>", methods=['GET'])
@@ -136,6 +145,12 @@ def get_results(job_key):
     else:
         #return redirect(url_for('get_results', job_key=job_key))
         return "Nay! Still Processing. Please refresh Again;", 202
+
+
+@app.route("/error")
+def errors(errors):
+    
+    return render_template('error.html', errors=errors)
 
 
 if __name__ == '__main__':
